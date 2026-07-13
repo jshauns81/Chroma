@@ -1,0 +1,40 @@
+{
+  "id": "catppuccin-macchiato",
+  "name": "Catppuccin Macchiato",
+  "family": "catppuccin",
+  "variant": "macchiato",
+  "appearance": "dark",
+  "source": {
+    "url": "https://github.com/catppuccin/palette/blob/main/palette.json",
+    "ref": "main",
+    "fetchedAt": "2026-07-12T00:00:00Z"
+  },
+  "palette": {
+    "primaryAccent": "purple",
+    "colors": {
+      "base": "#24273a",
+      "mantle": "#1e2030",
+      "crust": "#181926",
+      "surface0": "#363a4f",
+      "surface1": "#494d64",
+      "surface2": "#5b6078",
+      "overlay": "#6e738d",
+      "textMuted": "#a5adcb",
+      "text": "#cad3f5",
+      "red": "#ed8796",
+      "orange": "#f5a97f",
+      "yellow": "#eed49f",
+      "green": "#a6da95",
+      "cyan": "#8bd5ca",
+      "blue": "#8aadf4",
+      "purple": "#c6a0f6",
+      "pink": "#f5bde6"
+    }
+  },
+  "toolNames": {
+    "ghostty": "Catppuccin Macchiato",
+    "zellij": "catppuccin-macchiato",
+    "bat": "Catppuccin Macchiato",
+    "starship": "catppuccin_macchiato"
+  }
+}
