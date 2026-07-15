@@ -59,3 +59,45 @@ public struct Palette: Codable, Hashable, Sendable {
         }
     }
 }
+
+// MARK: - Codable
+
+// Hand-written rather than synthesized: a `[ColorRole: HexColor]` dictionary
+// only serializes as a JSON *object* keyed by role name if `ColorRole` adopts
+// `CodingKeyRepresentable`. Decoding via an intermediate `[String: HexColor]`
+// is more explicit and lets us reject unknown role names with a precise error
+// instead of silently dropping them — theme files are hand-edited, so a typo'd
+// role should fail loudly.
+extension Palette {
+    private enum CodingKeys: String, CodingKey {
+        case colors, primaryAccent
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let named = try container.decode([String: HexColor].self, forKey: .colors)
+
+        var resolved: [ColorRole: HexColor] = [:]
+        for (name, color) in named {
+            guard let role = ColorRole(rawValue: name) else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .colors, in: container,
+                    debugDescription: "Unknown color role '\(name)'"
+                )
+            }
+            resolved[role] = color
+        }
+
+        self.colors = resolved
+        self.primaryAccent = try container.decode(ColorRole.self, forKey: .primaryAccent)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        let named = Dictionary(
+            uniqueKeysWithValues: colors.map { ($0.key.rawValue, $0.value) }
+        )
+        try container.encode(named, forKey: .colors)
+        try container.encode(primaryAccent, forKey: .primaryAccent)
+    }
+}

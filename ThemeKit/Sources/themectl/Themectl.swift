@@ -17,6 +17,9 @@ struct List: ParsableCommand {
     )
 
     func run() throws {
-        print("No themes bundled yet — Milestone 1 adds the Catppuccin flavors.")
+        let store = try ThemeStore.bundled()
+        for theme in store.themes {
+            print("\(theme.id)\t\(theme.name) [\(theme.appearance.rawValue)]")
+        }
     }
 }

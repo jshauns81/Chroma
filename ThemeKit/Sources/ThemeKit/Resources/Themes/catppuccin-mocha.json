@@ -1,0 +1,40 @@
+{
+  "id": "catppuccin-mocha",
+  "name": "Catppuccin Mocha",
+  "family": "catppuccin",
+  "variant": "mocha",
+  "appearance": "dark",
+  "source": {
+    "url": "https://github.com/catppuccin/palette/blob/main/palette.json",
+    "ref": "main",
+    "fetchedAt": "2026-07-12T00:00:00Z"
+  },
+  "palette": {
+    "primaryAccent": "purple",
+    "colors": {
+      "base": "#1e1e2e",
+      "mantle": "#181825",
+      "crust": "#11111b",
+      "surface0": "#313244",
+      "surface1": "#45475a",
+      "surface2": "#585b70",
+      "overlay": "#6c7086",
+      "textMuted": "#a6adc8",
+      "text": "#cdd6f4",
+      "red": "#f38ba8",
+      "orange": "#fab387",
+      "yellow": "#f9e2af",
+      "green": "#a6e3a1",
+      "cyan": "#94e2d5",
+      "blue": "#89b4fa",
+      "purple": "#cba6f7",
+      "pink": "#f5c2e7"
+    }
+  },
+  "toolNames": {
+    "ghostty": "Catppuccin Mocha",
+    "zellij": "catppuccin-mocha",
+    "bat": "Catppuccin Mocha",
+    "starship": "catppuccin_mocha"
+  }
+}
