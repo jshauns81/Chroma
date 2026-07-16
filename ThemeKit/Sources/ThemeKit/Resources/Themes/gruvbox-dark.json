@@ -1,0 +1,39 @@
+{
+  "id": "gruvbox-dark",
+  "name": "Gruvbox Dark",
+  "family": "gruvbox",
+  "variant": "dark",
+  "appearance": "dark",
+  "source": {
+    "url": "https://github.com/morhetz/gruvbox/blob/master/colors/gruvbox.vim",
+    "ref": "master",
+    "fetchedAt": "2026-07-15T00:00:00Z"
+  },
+  "palette": {
+    "primaryAccent": "orange",
+    "colors": {
+      "base": "#282828",
+      "mantle": "#3c3836",
+      "crust": "#1d2021",
+      "surface0": "#3c3836",
+      "surface1": "#504945",
+      "surface2": "#665c54",
+      "overlay": "#7c6f64",
+      "textMuted": "#928374",
+      "text": "#ebdbb2",
+      "red": "#fb4934",
+      "orange": "#fe8019",
+      "yellow": "#fabd2f",
+      "green": "#b8bb26",
+      "cyan": "#8ec07c",
+      "blue": "#83a598",
+      "purple": "#d3869b"
+    }
+  },
+  "toolNames": {
+    "ghostty": "Gruvbox Dark",
+    "zellij": "gruvbox-dark",
+    "bat": "gruvbox-dark",
+    "starship": "gruvbox_dark"
+  }
+}

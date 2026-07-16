@@ -93,14 +93,23 @@ struct ThemeDecodingTests {
 
 @Suite("Bundled theme store")
 struct ThemeStoreTests {
-    @Test func loadsAllFourCatppuccinFlavors() throws {
+    @Test func loadsTheFullBundledRoster() throws {
         let store = try ThemeStore.bundled()
         let ids = Set(store.themes.map(\.id))
         #expect(ids == [
+            // Catppuccin flavors
             "catppuccin-latte",
             "catppuccin-frappe",
             "catppuccin-macchiato",
             "catppuccin-mocha",
+            // M7 families
+            "nord",
+            "tokyo-night-storm",
+            "everforest-dark-hard",
+            "gruvbox-dark",
+            "rose-pine",
+            "dracula",
+            "kanagawa-wave",
         ])
     }
 

@@ -1,0 +1,37 @@
+{
+  "id": "nord",
+  "name": "Nord",
+  "family": "nord",
+  "variant": "nord",
+  "appearance": "dark",
+  "source": {
+    "url": "https://github.com/nordtheme/nord/blob/develop/src/nord.scss",
+    "ref": "develop",
+    "fetchedAt": "2026-07-15T00:00:00Z"
+  },
+  "palette": {
+    "primaryAccent": "cyan",
+    "colors": {
+      "base": "#2e3440",
+      "surface0": "#3b4252",
+      "surface1": "#434c5e",
+      "surface2": "#4c566a",
+      "overlay": "#4c566a",
+      "textMuted": "#d8dee9",
+      "text": "#eceff4",
+      "red": "#bf616a",
+      "orange": "#d08770",
+      "yellow": "#ebcb8b",
+      "green": "#a3be8c",
+      "cyan": "#88c0d0",
+      "blue": "#5e81ac",
+      "purple": "#b48ead"
+    }
+  },
+  "toolNames": {
+    "ghostty": "Nord",
+    "zellij": "nord",
+    "bat": "Nord",
+    "starship": "nord"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "rose-pine",
+  "name": "Rosé Pine",
+  "family": "rose-pine",
+  "variant": "main",
+  "appearance": "dark",
+  "source": {
+    "url": "https://github.com/rose-pine/palette/blob/main/palette.json",
+    "ref": "main",
+    "fetchedAt": "2026-07-15T00:00:00Z"
+  },
+  "palette": {
+    "primaryAccent": "purple",
+    "colors": {
+      "base": "#191724",
+      "surface0": "#1f1d2e",
+      "surface1": "#26233a",
+      "overlay": "#6e6a86",
+      "textMuted": "#908caa",
+      "text": "#e0def4",
+      "red": "#eb6f92",
+      "orange": "#f6c177",
+      "yellow": "#f6c177",
+      "green": "#31748f",
+      "cyan": "#9ccfd8",
+      "blue": "#31748f",
+      "purple": "#c4a7e7",
+      "pink": "#ebbcba"
+    }
+  },
+  "toolNames": {
+    "ghostty": "Rose Pine",
+    "starship": "rose_pine"
+  }
+}

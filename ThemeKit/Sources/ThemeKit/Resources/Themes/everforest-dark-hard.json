@@ -1,0 +1,38 @@
+{
+  "id": "everforest-dark-hard",
+  "name": "Everforest Dark Hard",
+  "family": "everforest",
+  "variant": "dark-hard",
+  "appearance": "dark",
+  "source": {
+    "url": "https://github.com/sainnhe/everforest/blob/master/palette.md",
+    "ref": "master",
+    "fetchedAt": "2026-07-15T00:00:00Z"
+  },
+  "palette": {
+    "primaryAccent": "green",
+    "colors": {
+      "base": "#272e33",
+      "mantle": "#1e2326",
+      "crust": "#1e2326",
+      "surface0": "#2e383c",
+      "surface1": "#374145",
+      "surface2": "#414b50",
+      "overlay": "#495156",
+      "textMuted": "#859289",
+      "text": "#d3c6aa",
+      "red": "#e67e80",
+      "orange": "#e69875",
+      "yellow": "#dbbc7f",
+      "green": "#a7c080",
+      "cyan": "#83c092",
+      "blue": "#7fbbb3",
+      "purple": "#d699b6"
+    }
+  },
+  "toolNames": {
+    "ghostty": "Everforest Dark Hard",
+    "zellij": "everforest-dark",
+    "starship": "everforest_dark_hard"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "tokyo-night-storm",
+  "name": "Tokyo Night Storm",
+  "family": "tokyo-night",
+  "variant": "storm",
+  "appearance": "dark",
+  "source": {
+    "url": "https://github.com/folke/tokyonight.nvim/blob/main/lua/tokyonight/colors/storm.lua",
+    "ref": "main",
+    "fetchedAt": "2026-07-15T00:00:00Z"
+  },
+  "palette": {
+    "primaryAccent": "blue",
+    "colors": {
+      "base": "#24283b",
+      "mantle": "#1f2335",
+      "crust": "#1b1e2d",
+      "surface0": "#292e42",
+      "surface1": "#3b4261",
+      "surface2": "#414868",
+      "overlay": "#565f89",
+      "textMuted": "#a9b1d6",
+      "text": "#c0caf5",
+      "red": "#f7768e",
+      "orange": "#ff9e64",
+      "yellow": "#e0af68",
+      "green": "#9ece6a",
+      "cyan": "#7dcfff",
+      "blue": "#7aa2f7",
+      "purple": "#bb9af7",
+      "pink": "#ff007c"
+    }
+  },
+  "toolNames": {
+    "ghostty": "TokyoNight Storm",
+    "zellij": "tokyo-night-storm",
+    "starship": "tokyo_night_storm"
+  }
+}

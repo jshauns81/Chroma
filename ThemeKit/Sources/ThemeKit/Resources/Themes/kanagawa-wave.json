@@ -1,0 +1,39 @@
+{
+  "id": "kanagawa-wave",
+  "name": "Kanagawa Wave",
+  "family": "kanagawa",
+  "variant": "wave",
+  "appearance": "dark",
+  "source": {
+    "url": "https://github.com/rebelot/kanagawa.nvim/blob/master/lua/kanagawa/colors.lua",
+    "ref": "master",
+    "fetchedAt": "2026-07-15T00:00:00Z"
+  },
+  "palette": {
+    "primaryAccent": "blue",
+    "colors": {
+      "base": "#1f1f28",
+      "mantle": "#181820",
+      "crust": "#16161d",
+      "surface0": "#2a2a37",
+      "surface1": "#363646",
+      "surface2": "#54546d",
+      "overlay": "#223249",
+      "textMuted": "#727169",
+      "text": "#dcd7ba",
+      "red": "#c34043",
+      "orange": "#ffa066",
+      "yellow": "#e6c384",
+      "green": "#98bb6c",
+      "cyan": "#7aa89f",
+      "blue": "#7e9cd8",
+      "purple": "#957fb8",
+      "pink": "#d27e99"
+    }
+  },
+  "toolNames": {
+    "ghostty": "Kanagawa Wave",
+    "zellij": "kanagawa",
+    "starship": "kanagawa_wave"
+  }
+}

@@ -41,7 +41,7 @@ struct ApplyEngineTests {
         let change = try #require(try await engine.plan(for: macchiato()).first)
 
         #expect(change.willCreate)
-        #expect(change.newContent.contains("BAT_THEME=\"Catppuccin Macchiato\""))
+        #expect(change.newContent.contains("BAT_THEME=\"Chroma\""))
     }
 
     @Test func detectsNoopWhenAlreadyThemed() async throws {
@@ -64,7 +64,7 @@ struct ApplyEngineTests {
         try await engine.apply(macchiato())
 
         let written = try String(contentsOf: url, encoding: .utf8)
-        #expect(written.contains("BAT_THEME=\"Catppuccin Macchiato\""))
+        #expect(written.contains("BAT_THEME=\"Chroma\""))
     }
 
     @Test func applyBacksUpThenOverwritesExistingFile() async throws {
