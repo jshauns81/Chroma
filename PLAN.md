@@ -63,19 +63,43 @@ adapter, nothing else moves.
 - 22 tests green (full-theme decode, ISO-8601 source date, loader finds all
   four, every palette validates, unknown-role rejection).
 
-### M2 — Adapter engine ⬅ next
-`ThemeAdapter` protocol, `ConfigLineEditor`, `TemplateRenderer`; Ghostty as
-the reference adapter, end to end against a fixture config.
+### M2 — Adapter engine ✅
+- `ThemeAdapter` is a **pure transform** `(Theme, current: String?) -> String`;
+  no file I/O — that lives in M4's `ApplyEngine`, which keeps adapters
+  string-in/string-out testable.
+- `ConfigLineEditor` — replace-or-throw: never guesses, throws on a missing
+  *or* ambiguous anchor. Insert-when-missing is adapter policy, not the
+  editor's.
+- `TemplateRenderer` — `{{role}}` → `#rrggbb`, resolved through the palette
+  fallback chain; unknown role / unclosed `{{` are hard errors.
+- `GhosttyAdapter` (reference) rewrites the `theme = <name>` line from
+  `toolNames["ghostty"]`, ignoring commented lines. 13 new tests green (35 total).
 
-### M3 — Remaining v1 adapters
-Starship, Zellij, bat (incl. `theme.zsh` generation), SketchyBar
-(`0xAARRGGBB` via `HexColor.argb`).
+### M3 — Remaining v1 adapters ✅
+All five v1 adapters land in two shapes:
+- **Edit-a-line** (`ConfigLineEditor`): `ZellijAdapter` (`theme "…"`, KDL),
+  `StarshipAdapter` (`palette = "…"`, TOML; assumes palette tables already
+  defined), both twins of `GhosttyAdapter`.
+- **Generate-a-file**: `SketchyBarAdapter` renders a full `colors.sh` via
+  `TemplateRenderer` — placeholders gained `{{role:format}}` (`hex` default,
+  `argb` → `0xAARRGGBB`). `BatAdapter` emits a tiny `theme.zsh` exporting
+  `BAT_THEME` (name only, no colors).
+- 45 tests across 11 suites.
 
-### M4 — ApplyEngine & safe writes
-`ApplyEngine` actor; atomic writes with backup; dry-run diff output;
-post-apply hooks (chezmoi re-add, tool reload commands).
+### M4 — ApplyEngine & safe writes ✅
+- `ManagedTool` (adapter ⊕ config URL ⊕ optional reload command) and
+  `PlannedChange` (create/modify/noop). `ApplyEngine.plan(for:)` is the
+  read-only dry-run.
+- `ApplyEngine` is an `actor` (mutable `lastAppliedThemeID` + serialized
+  writes/hooks earn it). `apply(_:)`: atomic writes (temp-file + rename),
+  parent-dir creation, `<name>.bak` backups, no-op skipping — then post-apply
+  hooks (chezmoi re-add per changed file with `{}` path substitution; per-tool
+  reload once if changed).
+- Hooks run through an injected `CommandRunner` protocol (real
+  `ProcessCommandRunner` via `/usr/bin/env`; tests inject a recording fake — no
+  real shell-outs). 54 tests across 13 suites, temp dirs only.
 
-### M5 — `themectl sync` & `validate`
+### M5 — `themectl sync` & `validate` ⬅ next
 - `validate` — structural + required-role checks on theme JSONs.
 - `sync` — refresh theme JSONs from their canonical upstream sources.
 
