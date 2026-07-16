@@ -29,13 +29,37 @@ public struct ThemeStore: Sendable {
     /// inside the app, which is why all logic lives here rather than in the app
     /// target.
     public static func bundled() throws -> ThemeStore {
+        let themes = try bundledThemeURLs().map(loadTheme(at:))
+        return ThemeStore(themes: themes)
+    }
+
+    /// Loads every `*.json` theme from an arbitrary directory on disk.
+    ///
+    /// This is the maintainer-facing entry point (`themectl` pointed at the
+    /// repo's `Resources/Themes/`), as opposed to `bundled()`'s read-only
+    /// copy inside the built product.
+    public static func load(fromDirectory directory: URL) throws -> ThemeStore {
+        let themes = try themeURLs(in: directory).map(loadTheme(at:))
+        return ThemeStore(themes: themes)
+    }
+
+    /// URLs of the theme JSONs shipped inside `ThemeKit`.
+    static func bundledThemeURLs() throws -> [URL] {
         guard let urls = Bundle.module.urls(
             forResourcesWithExtension: "json", subdirectory: "Themes"
         ), !urls.isEmpty else {
             throw LoadError.resourcesNotFound
         }
-        let themes = try urls.map(loadTheme(at:))
-        return ThemeStore(themes: themes)
+        return urls.sorted { $0.lastPathComponent < $1.lastPathComponent }
+    }
+
+    /// The `*.json` files in `directory`, sorted by filename for stable output.
+    static func themeURLs(in directory: URL) throws -> [URL] {
+        let urls = try FileManager.default.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: nil
+        ).filter { $0.pathExtension == "json" }
+        guard !urls.isEmpty else { throw LoadError.resourcesNotFound }
+        return urls.sorted { $0.lastPathComponent < $1.lastPathComponent }
     }
 
     /// Decodes one theme file, wrapping any failure with the offending URL so a
@@ -50,6 +74,22 @@ public struct ThemeStore: Sendable {
         } catch {
             throw LoadError.decodeFailed(url: url, underlying: error)
         }
+    }
+
+    /// Serialize a theme back to the on-disk JSON shape.
+    ///
+    /// `.sortedKeys` is what makes `themectl sync` diff-friendly: without it a
+    /// `[ColorRole: HexColor]` dictionary serializes in arbitrary order, so an
+    /// otherwise-identical re-sync would produce noise. Sorting trades a
+    /// one-time reordering of the hand-authored files for stable diffs forever
+    /// after. `.withoutEscapingSlashes` keeps the `source.url` readable.
+    public static func encode(_ theme: Theme) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        encoder.dateEncodingStrategy = .iso8601
+        var data = try encoder.encode(theme)
+        data.append(0x0A)  // trailing newline, like the hand-authored files
+        return data
     }
 
     public enum LoadError: Error {
