@@ -4,3 +4,8 @@ DerivedData/
 *.xcuserstate
 xcuserdata/
 .swiftpm/
+
+# Local dev tooling — keep on disk, keep out of the public repo
+CLAUDE.md
+.claude/
+.vscode/
