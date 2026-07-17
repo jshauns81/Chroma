@@ -58,6 +58,11 @@ public actor ApplyEngine {
     /// Optional dotfile-sync hook run per changed file, with `"{}"` replaced by
     /// the file's path — e.g. `["chezmoi", "re-add", "{}"]`. `nil` disables it.
     let dotfileReAddCommand: [String]?
+    /// Optional file to record the applied theme's id in, one line, on every
+    /// successful apply — so external tools (the SketchyBar switcher) can show
+    /// what's live regardless of whether the app or the CLI applied it. `nil`
+    /// disables the write; tests leave it off.
+    let currentThemeStateURL: URL?
 
     /// The id of the most recently applied theme, or `nil` if none yet.
     public private(set) var lastAppliedThemeID: Theme.ID?
@@ -65,11 +70,13 @@ public actor ApplyEngine {
     public init(
         tools: [ManagedTool],
         runner: any CommandRunner = ProcessCommandRunner(),
-        dotfileReAddCommand: [String]? = nil
+        dotfileReAddCommand: [String]? = nil,
+        currentThemeStateURL: URL? = nil
     ) {
         self.tools = tools
         self.runner = runner
         self.dotfileReAddCommand = dotfileReAddCommand
+        self.currentThemeStateURL = currentThemeStateURL
     }
 
     /// Compute, without writing anything, what applying `theme` would do to
@@ -117,7 +124,20 @@ public actor ApplyEngine {
             }
         }
 
-        // 3. Reload each tool whose config actually changed, once.
+        // 3. Record the live theme id BEFORE reloading. A reload hook may read
+        //    this file (the SketchyBar switcher rebuilds itself from it), so it
+        //    must already reflect the new theme or the reload races the write
+        //    and shows the previous theme. Best-effort: a failure here must not
+        //    fail an otherwise-successful apply.
+        lastAppliedThemeID = theme.id
+        if let stateURL = currentThemeStateURL {
+            try? FileManager.default.createDirectory(
+                at: stateURL.deletingLastPathComponent(), withIntermediateDirectories: true
+            )
+            try? "\(theme.id)\n".write(to: stateURL, atomically: true, encoding: .utf8)
+        }
+
+        // 4. Reload each tool whose config actually changed, once.
         for tool in tools {
             guard let reload = tool.reloadCommand, !reload.isEmpty,
                   changed.contains(where: { $0.toolName == tool.adapter.toolName })
@@ -125,7 +145,6 @@ public actor ApplyEngine {
             _ = try await runner.run(reload[0], arguments: Array(reload.dropFirst()))
         }
 
-        lastAppliedThemeID = theme.id
         return changes
     }
 

@@ -43,6 +43,32 @@ public struct Palette: Codable, Hashable, Sendable {
     /// The resolved accent color the theme leads with.
     public var accent: HexColor { self[primaryAccent] }
 
+    /// Which role actually supplies `role`'s color: `role` itself when defined,
+    /// otherwise the first role in its fallback chain that is defined, otherwise
+    /// `text` (the universal last resort), or `nil` for a palette so sparse even
+    /// `text` is missing. Lets the import review show *provenance* — is this
+    /// color mapped directly, or borrowed by fallback? — which the subscript
+    /// alone can't tell you.
+    public func resolvedSource(for role: ColorRole) -> ColorRole? {
+        if colors[role] != nil { return role }
+        for candidate in Palette.fallbacks[role, default: []] where colors[candidate] != nil {
+            return candidate
+        }
+        return colors[.text] != nil ? .text : nil
+    }
+
+    /// Roles defined explicitly (mapped directly from the source), in the
+    /// canonical `ColorRole` order.
+    public var definedRoles: [ColorRole] {
+        ColorRole.allCases.filter { colors[$0] != nil }
+    }
+
+    /// Roles *not* defined explicitly — the ones the review resolves by
+    /// fallback — in canonical order.
+    public var fallbackRoles: [ColorRole] {
+        ColorRole.allCases.filter { colors[$0] == nil }
+    }
+
     /// Roles every palette must define explicitly (no fallback allowed).
     public static let requiredRoles: [ColorRole] = [
         .base, .text, .red, .yellow, .green, .blue,

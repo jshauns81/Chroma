@@ -33,6 +33,20 @@ public struct ThemeStore: Sendable {
         return ThemeStore(themes: themes)
     }
 
+    /// The full theme library the user sees: the bundled roster plus any themes
+    /// imported into `ChromaPaths.importedThemesDirectory`. Imported themes win
+    /// on an id collision (re-importing updates in place). A missing or empty
+    /// imported directory — the common case — is not an error.
+    ///
+    /// Shared by the app and `themectl` so both list and apply the same set.
+    public static func chromaLibrary() throws -> ThemeStore {
+        let bundled = try bundled().themes
+        let imported = (try? load(fromDirectory: ChromaPaths.importedThemesDirectory).themes) ?? []
+        var byID: [String: Theme] = [:]
+        for theme in bundled + imported { byID[theme.id] = theme }
+        return ThemeStore(themes: Array(byID.values))
+    }
+
     /// Loads every `*.json` theme from an arbitrary directory on disk.
     ///
     /// This is the maintainer-facing entry point (`themectl` pointed at the
