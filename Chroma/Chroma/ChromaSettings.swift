@@ -34,6 +34,13 @@ final class ChromaSettings {
         didSet { defaults.set(runReloadHooks, forKey: Key.runReloadHooks) }
     }
 
+    /// Whether Chroma shows its menu-bar icon. Off by default: a fresh install
+    /// is an ordinary window app. Turning this on makes Chroma a menu-bar
+    /// utility (icon shown, launches quietly to the bar, no Dock icon).
+    var showMenuBarIcon: Bool {
+        didSet { defaults.set(showMenuBarIcon, forKey: Key.showMenuBarIcon) }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -41,6 +48,14 @@ final class ChromaSettings {
         self.disabledToolIDs = Set(defaults.stringArray(forKey: Key.disabledTools) ?? [])
         self.reAddCommand = defaults.string(forKey: Key.reAddCommand) ?? "chezmoi re-add {}"
         self.runReloadHooks = defaults.object(forKey: Key.runReloadHooks) as? Bool ?? true
+        self.showMenuBarIcon = defaults.bool(forKey: Key.showMenuBarIcon)  // default false
+    }
+
+    /// The persisted menu-bar preference read *without* an instance, so the
+    /// `AppDelegate` can choose the activation policy at launch — before any
+    /// view (and thus any `ChromaSettings` instance) is built.
+    nonisolated static var showsMenuBarIconAtLaunch: Bool {
+        UserDefaults.standard.bool(forKey: Key.showMenuBarIcon)
     }
 
     func isEnabled(_ toolID: String) -> Bool {
@@ -66,5 +81,6 @@ final class ChromaSettings {
         static let disabledTools = "disabledToolIDs"
         static let reAddCommand = "reAddCommand"
         static let runReloadHooks = "runReloadHooks"
+        static let showMenuBarIcon = "showMenuBarIcon"
     }
 }
