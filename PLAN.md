@@ -199,6 +199,144 @@ are hand-verified against canonical sources for now). One-time user setup for
 bat: `.zshrc` must source `~/.config/chroma/theme.zsh` (already migrated) — the
 `Chroma.tmTheme` dir is auto-created by ApplyEngine.
 
+### M8 — V2 redesign: gallery + stage hybrid *(2026-07-16)*
+Rebuilt the app UI from the `design_handoff_v2_redesign` package (sidebar/detail
+→ browse-first gallery whose chrome re-themes live from the selection). New files
+alongside the old (`ContentView`/`ThemeDetailView`/`SwatchGrid` kept but no longer
+wired — safe to delete once eyeballed). All logic reuses existing `Theme`/
+`Palette`/`ColorRole`/`AppModel`/`ToolPlan`; the only ThemeKit change is
+additive.
+- **Foundation** (`DesignSystem.swift`): `EnvironmentValues.chromaPalette` +
+  semantic token accessors on `Palette` (window/chrome/track/raised/body/
+  secondary/tertiary/separator/accent) + `ChromaMetrics`. Chrome themes itself by
+  a single env write; cards/chips override with their own palette.
+- **`TerminalPreview`** (hero): mocked-but-truthful SketchyBar + Ghostty + Zellij
+  + `bat src/palette.rs` stack, every color a role of the previewed theme. Three
+  variants — full, bare (Peek), mini (cards, first 3 code lines).
+- **Gallery** (`GalleryView`): toolbar (icon/title, All/Light/Dark filter, gear
+  via `SettingsLink`, Import, prominent Apply) / `LazyVGrid` of `ThemeCard`s +
+  dashed Import card / footer with the debounced **trust line**. ← → / Space /
+  Esc keyboard nav.
+- **Peek + Compare** (`PeekView`): full-bleed bare preview, translucent top bar,
+  half/half current-vs-selected split with divider + corner labels.
+- **Import** (`ImportSheet` + persistence): two-step URL-fetch/JSON-drop →
+  fallback-review flow. Reads **Chroma-format** theme/palette JSON (upstream
+  formats stay `themectl sync`'s job). Persists to
+  `~/Library/Application Support/Chroma/Themes`; `AppModel` merges imported +
+  bundled at launch. ThemeKit add: `Palette.resolvedSource(for:)` /
+  `definedRoles` / `fallbackRoles`.
+- **Menu bar** (`MenuBarContent`): `.menuBarExtraStyle(.window)` popover, 3-col
+  `FilmChip` grid over the shared selection.
+- **Splash** (`SplashView`) + the approved "Accent Bar" **AppIcon** dropped into
+  the asset catalog. Once per session, last-applied palette.
+
+Status: builds headless (`xcodebuild` green), 78 ThemeKit tests pass, app
+launches without crash. **Not yet visually verified** — screen capture is
+TCC-blocked from the headless/terminal context; needs an eyeball pass in Xcode
+previews or a manual run.
+
+### `themectl apply` + SketchyBar switcher *(2026-07-16)*
+Added a headless apply path so the terminal itself can switch themes:
+- **ThemeKit**: the tool roster is now canonical in `ChromaTool`/`ChromaTools.all`
+  (the app's `ToolDescriptor` is a typealias over it — one source of truth, no
+  app/CLI drift). `ChromaPaths` centralises `~/.config/chroma/current`, the
+  imported-themes dir, and the config dir. `ThemeStore.chromaLibrary()` merges
+  bundled + imported (app and CLI now list/apply the same set). `ApplyEngine`
+  gained an opt-in `currentThemeStateURL` — every apply (app **or** CLI) records
+  the live theme id.
+- **themectl**: `apply <id> [--no-reload] [--rebind] [--dry-run]` (reuses
+  `ApplyEngine`; `--rebind` opt-in for chezmoi re-add, off by default per the
+  2026-07-15 incident) and `current`. `list --porcelain` emits
+  `id⇥name⇥appearance⇥#accent` for scripts. Installed to `~/.local/bin/themectl`
+  (+ its `ThemeKit_ThemeKit.bundle` beside it — SPM resource bundle).
+- **SketchyBar**: `plugins/chroma.sh` + a `chroma` paintbrush item in
+  `sketchybarrc` (backed up as `*.chroma.bak`), added to `POPUP_ITEMS` in
+  `lib.sh`. The pill shows the active theme, tinted its accent; the popup lists
+  every theme (accent dot + name, ✓ on the live one); a row's click runs
+  `themectl apply`, which re-themes the whole stack incl. the bar. Verified live
+  (apply nord no-op moved the ✓ correctly).
+- **Note**: the SketchyBar files are chezmoi-managed — reconcile the source
+  (`chezmoi re-add` / edit source) when settled. CLI currently applies with all
+  tools + reload on (no per-tool toggles like the app's Settings — a follow-up).
+- **Fixes (same day, after first live test)**: three bugs surfaced switching
+  themes from the bar, all fixed:
+  1. *Checkmark race* — `ApplyEngine` wrote the current-theme marker *after*
+     running reloads, so `sketchybar --reload` read it before it updated and the
+     ✓/label lagged a switch. Now the marker is written **before** reloads
+     (affects app + CLI).
+  2. *Rosé Pine (and any theme without a Zellij built-in) aborted the whole
+     apply* — `themectl apply` now **skips tools that can't render** the theme
+     (reports them on stderr) instead of failing, matching the app's per-tool
+     leniency. Zellij is uninstalled anyway.
+  3. *Flaky dropdown* — `popup.drawing=toggle` desynced against the click-away
+     watcher. `chroma.sh` now opens **deterministically** (`=on`) and no longer
+     shells out per event; the pill's label/accent are set at build time.
+
+### M9 — UI polish: unified toolbar, menu-bar agent, live dropdown switcher *(2026-07-16)*
+
+Interactive polish pass on the M8 gallery (all uncommitted):
+
+- **Unified title bar** (`ChromaApp` + `GalleryView`): the fake in-VStack header
+  became a **real `NSToolbar`**. `.windowStyle(.hiddenTitleBar)` +
+  `.windowToolbarStyle(.unified(showsTitle: false))` + `.toolbar { toolbarContent }`
+  (placements `.navigation` logo / `.principal` filter / `.primaryAction`
+  buttons). AppKit now owns the strip and centers the traffic lights — dropped
+  the earlier manual `trafficLightInset` + `.ignoresSafeArea(.top)` hack (both
+  removed). Bar background themed live via
+  `.toolbarBackground(palette.chromeBackground, for: .windowToolbar)`.
+- **macOS 26 Liquid Glass opt-out**: a real toolbar wraps its items in the
+  system's shared glass on Tahoe. Suppressed per group with Apple's sanctioned
+  `.sharedBackgroundVisibility(.hidden)` so the custom bordered-Import /
+  accent-Apply styling reads as designed; toolbar `Label`s go icon-only by
+  default, so Apply forces text back with `.labelStyle(.titleAndIcon)`.
+- **Chrome appearance follows the selection**: `.preferredColorScheme` driven by
+  the selected theme's `appearance`. System toolbar controls (segmented filter,
+  bordered Import) take their ink from the window's `NSAppearance`, not the
+  palette — this flips them to dark text on light themes. *Palette carries
+  color; colorScheme carries appearance — two separate axes.*
+- **Peek** (`PeekView`): removed the redundant Apply (the toolbar's Apply stays
+  visible over the Peek overlay). **Compare fixed** — it was permanently
+  disabled because `lastAppliedTheme` was nil until an in-session apply.
+  `AppModel.init` now **seeds `lastAppliedID` from `~/.config/chroma/current`**
+  (trimmed, guarded against unknown ids), so Compare *and* the "current" badges
+  are live from launch and agree with the SketchyBar switcher's marker.
+- **Menu-bar dropdown is now a real switcher** (`MenuBarContent`): a `FilmChip`
+  click **applies live** (was select-only). Fixed the "grid never rendered from
+  the start" bug — a `ScrollView` has no intrinsic height, so inside the
+  self-sizing `.window` popover it collapsed to zero; `.frame(height: 360)` gives
+  it room. Menu-bar icon is a monochrome **template `MenuBarGlyph`** (bars drawn
+  into an `NSImage`, `isTemplate`), auto-tinting for light/dark bars.
+- **Menu-bar agent, opt-in** (the big one): Chroma is a normal window app by
+  default and *becomes* a menu-bar utility via Settings.
+  - `ChromaSettings.showMenuBarIcon` (default **off**) + a `nonisolated static
+    showsMenuBarIconAtLaunch` the `AppDelegate` reads before any view exists.
+  - `AppDelegate`: activation policy `.accessory` (no Dock icon / no cmd-tab)
+    when the icon is on, else `.regular`; `applicationShouldTerminateAfterLast
+    WindowClosed` = *normal app quits on close, utility persists*; reopen returns
+    true.
+  - `MenuBarExtra(isInserted: $settings.showMenuBarIcon)` shows/hides live;
+    `.defaultLaunchBehavior(showMenuBarIcon ? .suppressed : .automatic)` — quiet
+    launch to the bar vs normal window-at-launch.
+  - **Launch at login** via `SMAppService.mainApp` (`LoginItem` wrapper) —
+    modern, SIP-safe, no helper bundle. Settings "Menu Bar" section: two toggles,
+    launch-at-login **gated** on the icon + live activation-policy switch.
+  - *Caveat:* `SMAppService` only registers a signed app the system can find by
+    bundle id — works from `/Applications`, no-ops from `DerivedData`. Test login
+    behavior against an installed copy.
+- **Xcode previews**: added `PreviewData` (DEBUG-only, loads the real bundled
+  themes) + `#Preview`s on the leaf views (`ThemeCard`, `GalleryFooter`,
+  `TerminalPreview`). Window chrome (title bar, toolbar) can't be previewed — the
+  canvas hosts a *view*, not the `App` scene, so `.windowStyle`/`.toolbar` never
+  run there.
+
+**M9 follow-ups (offered, not done):** (a) mirror the native switcher in the
+**SketchyBar** dropdown (separate shell + `themectl` popup, next); (b) reopen
+from Finder in agent mode may not pop a window (SwiftUI + `.suppressed` is
+inconsistent — a window-bridge would harden it); (c) menu-bar apply failures are
+**silent** (success shows via the seal; a `.failed` has nowhere to surface — a
+dropdown status footer would fix it); (d) `MenuBarGlyph` is a generic bars mark —
+could refine toward the true Chroma logo.
+
 ## Open decisions (non-blocking)
 
 - Publish workflow: a small `shaunsync` gate script (`--check` scan,
