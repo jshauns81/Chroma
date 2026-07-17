@@ -6,21 +6,109 @@ import ThemeKit
 struct Themectl: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "themectl",
-        abstract: "Sync and validate Chroma's theme definitions.",
-        subcommands: [List.self, Validate.self, Sync.self]
+        abstract: "Manage Chroma's themes: list, validate, sync, and apply.",
+        subcommands: [List.self, Validate.self, Sync.self, Apply.self, Current.self]
     )
 }
 
 struct List: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "List bundled themes."
+        abstract: "List available themes (bundled + imported)."
+    )
+
+    @Flag(name: .long, help: "Machine format: tab-separated id, name, appearance, accent hex.")
+    var porcelain = false
+
+    func run() throws {
+        let store = try ThemeStore.chromaLibrary()
+        for theme in store.themes {
+            if porcelain {
+                print("\(theme.id)\t\(theme.name)\t\(theme.appearance.rawValue)\t\(theme.palette.accent.hexString)")
+            } else {
+                print("\(theme.id)\t\(theme.name) [\(theme.appearance.rawValue)]")
+            }
+        }
+    }
+}
+
+struct Apply: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Apply a theme to every managed tool (writes configs, backs up, reloads)."
+    )
+
+    @Argument(help: "Theme id to apply (see `themectl list`).")
+    var id: String
+
+    @Flag(name: .customLong("no-reload"), help: "Skip the per-tool reload hooks.")
+    var noReload = false
+
+    @Flag(name: .long, help: "After writing, run `chezmoi re-add` on changed files.")
+    var rebind = false
+
+    @Flag(name: .long, help: "Show what would change without writing any files.")
+    var dryRun = false
+
+    func run() async throws {
+        let store = try ThemeStore.chromaLibrary()
+        guard let theme = store.theme(id: id) else {
+            FileHandle.standardError.write(Data("No theme with id '\(id)'. Run `themectl list`.\n".utf8))
+            throw ExitCode.failure
+        }
+
+        // Skip tools that can't render this theme — e.g. Zellij, which needs a
+        // built-in theme name the theme may not carry (Rosé Pine). One
+        // unsupported tool shouldn't abort the whole switch; this mirrors the
+        // app's per-tool leniency (`AppModel.plan`).
+        var usable: [ManagedTool] = []
+        var skipped: [String] = []
+        for tool in ChromaTools.all {
+            let current = try? String(contentsOf: tool.configURL, encoding: .utf8)
+            if (try? tool.adapter.render(theme: theme, current: current)) != nil {
+                usable.append(tool.managedTool(runReload: !noReload))
+            } else {
+                skipped.append(tool.displayName)
+            }
+        }
+        if !skipped.isEmpty {
+            FileHandle.standardError.write(
+                Data("Skipped (no \(theme.name) theme): \(skipped.joined(separator: ", "))\n".utf8)
+            )
+        }
+
+        let engine = ApplyEngine(
+            tools: usable,
+            dotfileReAddCommand: rebind ? ["chezmoi", "re-add", "{}"] : nil,
+            currentThemeStateURL: ChromaPaths.currentThemeState
+        )
+
+        if dryRun {
+            for change in try await engine.plan(for: theme) {
+                print(change.summary)
+            }
+            return
+        }
+
+        let changes = try await engine.apply(theme)
+        let changed = changes.filter { !$0.isNoop }
+        if changed.isEmpty {
+            print("No changes needed — configs already match \(theme.name).")
+        } else {
+            let names = changed.map { $0.url.lastPathComponent }.joined(separator: ", ")
+            print("Applied \(theme.name): updated \(changed.count) file(s) — \(names).")
+        }
+    }
+}
+
+struct Current: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Print the id of the theme applied most recently."
     )
 
     func run() throws {
-        let store = try ThemeStore.bundled()
-        for theme in store.themes {
-            print("\(theme.id)\t\(theme.name) [\(theme.appearance.rawValue)]")
+        guard let id = try? String(contentsOf: ChromaPaths.currentThemeState, encoding: .utf8) else {
+            throw ExitCode.failure  // nothing applied yet
         }
+        print(id.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 }
 
